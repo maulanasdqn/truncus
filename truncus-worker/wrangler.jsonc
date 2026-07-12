@@ -1,0 +1,40 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "truncus",
+  "main": "build/worker/shim.mjs",
+  "compatibility_date": "2026-06-01",
+  "build": {
+    "command": "cargo install -q worker-build && worker-build --release"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "routes": [
+    {
+      "pattern": "truncus.stynx.app",
+      "custom_domain": true
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "truncus-db",
+      "database_id": "08bbaa05-47b6-4f4f-ac2d-458997f3fe5b"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "RAW",
+      "bucket_name": "truncus-raw"
+    }
+  ],
+  "vars": {
+    "ACCOUNT_ID": "ce8a61fd47af22e57a2c286540cd954a",
+    "VECTORIZE_INDEX": "truncus-memory",
+    "EMBED_MODEL": "@cf/baai/bge-m3",
+    "SUMMARY_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+  }
+}

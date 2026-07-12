@@ -1,0 +1,12 @@
+[package]
+name = "truncus-hook"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+truncus-core = { workspace = true, features = ["client"] }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+tokio = { version = "1", features = ["macros", "rt"] }
+gethostname = "1"
