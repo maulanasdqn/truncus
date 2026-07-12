@@ -37,6 +37,11 @@ impl ApiClient {
             .await
     }
 
+    pub async fn delete_session(&self, id: &str) -> Result<IngestResponse, ApiError> {
+        self.execute(self.http.delete(self.url(&format!("/v1/sessions/{id}"))))
+            .await
+    }
+
     pub async fn search(
         &self,
         query: &str,

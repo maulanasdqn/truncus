@@ -36,6 +36,17 @@ for crate in truncus-hook truncus-mcp truncus-cli; do cargo install --path $crat
 truncus install           # writes ~/.config/truncus/config.toml, registers hooks + MCP server
 ```
 
+## Linking another device
+
+Memory is shared through the single Worker: every device that talks to the same URL with the same token reads and writes the same cluster (sessions are tagged with the device hostname). On each new machine:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/maulanasdqn/truncus/main/scripts/install.sh | bash -s -- \
+  --url https://truncus.stynx.app --token <TRUNCUS_API_TOKEN>
+```
+
+That builds the three binaries from this repo, writes the client config, registers the SessionEnd/SessionStart hooks, and adds the MCP server — from then on every new Claude Code session on that device saves to and recalls from the shared memory.
+
 ## Usage
 
 Sessions are saved and recalled automatically. Manual access:
@@ -45,6 +56,7 @@ truncus search "how did i fix the login bug"
 truncus sessions --project truncus
 truncus session <session-id>
 truncus reprocess <session-id>
+truncus delete <session-id>
 ```
 
 Inside Claude Code, ask things like *"what did I work on last week?"* — the `truncus` MCP tools handle recall.
@@ -57,6 +69,7 @@ All endpoints require `Authorization: Bearer $TRUNCUS_API_TOKEN`.
 |---|---|
 | `POST /v1/sessions` | ingest a session (returns 202, processes async) |
 | `POST /v1/sessions/:id/process` | re-run the pipeline for one session |
+| `DELETE /v1/sessions/:id` | remove a session from D1, R2, and Vectorize |
 | `GET /v1/search?q&project&kind&limit` | semantic search over summaries + chunks |
 | `GET /v1/context?project` | recall bundle for session start |
 | `GET /v1/sessions?project&limit` | list sessions |

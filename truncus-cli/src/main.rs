@@ -33,6 +33,9 @@ enum Command {
     Reprocess {
         id: String,
     },
+    Delete {
+        id: String,
+    },
     Install {
         #[arg(long)]
         url: Option<String>,
@@ -67,6 +70,11 @@ async fn main() -> anyhow::Result<()> {
         Command::Reprocess { id } => {
             let response = client()?.reprocess(&id).await?;
             println!("session {} queued ({})", response.id, response.status);
+            Ok(())
+        }
+        Command::Delete { id } => {
+            let response = client()?.delete_session(&id).await?;
+            println!("session {} {}", response.id, response.status);
             Ok(())
         }
     }

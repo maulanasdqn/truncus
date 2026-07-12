@@ -37,6 +37,32 @@ pub async fn reprocess(_req: Request, ctx: RouteContext<Context>) -> Result<Resp
     accepted(session_id)
 }
 
+pub async fn remove(_req: Request, ctx: RouteContext<Context>) -> Result<Response> {
+    let Some(session_id) = ctx.param("id").map(|id| id.to_string()) else {
+        return Response::error("missing id", 400);
+    };
+    let store = Store::new(ctx.env.d1("DB")?);
+    let Some(meta) = store.get_session(&session_id).await? else {
+        return Response::error("not found", 404);
+    };
+    let mut vector_ids = vec![pipeline::summary_vector_id(&session_id)];
+    vector_ids.extend(
+        (0..meta.chunk_count.max(0) as usize).map(|seq| pipeline::chunk_vector_id(&session_id, seq)),
+    );
+    crate::vectorize::VectorIndex::new(&ctx.env)?
+        .delete_by_ids(&vector_ids)
+        .await?;
+    ctx.env
+        .bucket("RAW")?
+        .delete(pipeline::raw_key(&session_id))
+        .await?;
+    store.delete_session(&session_id).await?;
+    Response::from_json(&IngestResponse {
+        id: session_id,
+        status: "deleted".into(),
+    })
+}
+
 fn schedule(ctx: &RouteContext<Context>, session_id: String) {
     let env = ctx.env.clone();
     ctx.data.wait_until(pipeline::run(env, session_id));

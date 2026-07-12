@@ -140,6 +140,19 @@ impl Store {
             .results()
     }
 
+    pub async fn delete_session(&self, id: &str) -> Result<()> {
+        let statements = vec![
+            self.db
+                .prepare("DELETE FROM chunks WHERE session_id=?1")
+                .bind(&[s(id)])?,
+            self.db
+                .prepare("DELETE FROM sessions WHERE id=?1")
+                .bind(&[s(id)])?,
+        ];
+        self.db.batch(statements).await?;
+        Ok(())
+    }
+
     pub async fn hydrate_chunks(&self, ids: &[String]) -> Result<Vec<ChunkHydration>> {
         if ids.is_empty() {
             return Ok(Vec::new());
