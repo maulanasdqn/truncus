@@ -1,3 +1,4 @@
+mod capture;
 mod session_end;
 mod session_start;
 
@@ -12,8 +13,9 @@ async fn main() {
     let outcome = match mode.as_str() {
         "session-end" => session_end::run(&payload).await,
         "session-start" => session_start::run(&payload).await,
+        "capture" => capture::run(&payload).await,
         _ => Err(anyhow::anyhow!(
-            "usage: truncus-hook <session-end|session-start>"
+            "usage: truncus-hook <session-end|session-start|capture>"
         )),
     };
     if let Err(error) = outcome {

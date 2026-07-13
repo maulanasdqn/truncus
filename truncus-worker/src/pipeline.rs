@@ -2,6 +2,7 @@ use crate::ai::AiService;
 use crate::db::Store;
 use crate::vectorize::{VectorIndex, VectorRecord};
 use serde_json::json;
+use std::collections::HashMap;
 use truncus_core::chunk::chunk_messages;
 use truncus_core::dto::{IngestRequest, Msg};
 use worker::{Env, Result};
@@ -43,12 +44,13 @@ async fn process(env: &Env, session_id: &str) -> Result<()> {
 
     let chunks = chunk_messages(&raw.messages);
     let summary = ai.summarize(&render_conversation(&raw.messages)).await?;
+    let changed = changed_seqs(&store, session_id, &chunks).await?;
 
     let mut texts = vec![summary.clone()];
-    texts.extend(chunks.iter().cloned());
+    texts.extend(changed.iter().map(|&seq| chunks[seq].clone()));
     let vectors = ai.embed(&texts).await?;
 
-    let records = build_records(session_id, &raw, &chunks, vectors);
+    let records = build_records(session_id, &raw, &changed, vectors);
     for batch in records.chunks(UPSERT_BATCH) {
         index.upsert(batch).await?;
     }
@@ -61,22 +63,38 @@ async fn process(env: &Env, session_id: &str) -> Result<()> {
     Ok(())
 }
 
+async fn changed_seqs(
+    store: &Store,
+    session_id: &str,
+    chunks: &[String],
+) -> Result<Vec<usize>> {
+    let existing: HashMap<i64, String> = store
+        .chunk_seq_texts(session_id)
+        .await?
+        .into_iter()
+        .map(|row| (row.seq, row.text))
+        .collect();
+    Ok((0..chunks.len())
+        .filter(|&seq| existing.get(&(seq as i64)).map(String::as_str) != Some(chunks[seq].as_str()))
+        .collect())
+}
+
 fn build_records(
     session_id: &str,
     raw: &IngestRequest,
-    chunks: &[String],
+    changed: &[usize],
     mut vectors: Vec<Vec<f32>>,
 ) -> Vec<VectorRecord> {
     let metadata = |kind: &str| {
         json!({ "project": raw.project, "kind": kind, "ts": raw.ended_at })
     };
-    let mut records = Vec::with_capacity(chunks.len() + 1);
+    let mut records = Vec::with_capacity(changed.len() + 1);
     records.push(VectorRecord {
         id: summary_vector_id(session_id),
         values: vectors.remove(0),
         metadata: metadata("summary"),
     });
-    for (seq, values) in vectors.into_iter().enumerate() {
+    for (&seq, values) in changed.iter().zip(vectors) {
         records.push(VectorRecord {
             id: chunk_vector_id(session_id, seq),
             values,

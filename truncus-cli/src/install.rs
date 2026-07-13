@@ -67,6 +67,12 @@ fn install_hooks(hook_bin: &Path) -> anyhow::Result<PathBuf> {
         Some("startup|resume|clear"),
         format!("{} session-start", hook_bin.display()),
     );
+    upsert_hook(
+        &mut settings,
+        "Stop",
+        None,
+        format!("{} capture", hook_bin.display()),
+    );
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }

@@ -1,26 +1,23 @@
 use serde::Deserialize;
-use truncus_core::dto::{IngestRequest, SessionBrief, SessionMeta};
+use truncus_core::dto::{IngestRequest, SessionMeta};
 use worker::wasm_bindgen::JsValue;
 use worker::{D1Database, Result};
 
 pub struct Store {
-    db: D1Database,
+    pub(crate) db: D1Database,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ChunkHydration {
-    pub id: String,
-    pub session_id: String,
+pub struct SeqText {
+    pub seq: i64,
     pub text: String,
-    pub project: String,
-    pub ended_at: i64,
 }
 
-fn s(value: &str) -> JsValue {
+pub(crate) fn s(value: &str) -> JsValue {
     JsValue::from(value)
 }
 
-fn n(value: i64) -> JsValue {
+pub(crate) fn n(value: i64) -> JsValue {
     JsValue::from(value as f64)
 }
 
@@ -100,41 +97,10 @@ impl Store {
             .await
     }
 
-    pub async fn list_sessions(
-        &self,
-        project: Option<&str>,
-        limit: usize,
-    ) -> Result<Vec<SessionMeta>> {
-        let (sql, binds) = match project {
-            Some(p) => (
-                "SELECT id, project, machine, started_at, ended_at, status, summary, error, \
-                 chunk_count FROM sessions WHERE project=?1 ORDER BY ended_at DESC LIMIT ?2",
-                vec![s(p), n(limit as i64)],
-            ),
-            None => (
-                "SELECT id, project, machine, started_at, ended_at, status, summary, error, \
-                 chunk_count FROM sessions ORDER BY ended_at DESC LIMIT ?1",
-                vec![n(limit as i64)],
-            ),
-        };
-        self.db.prepare(sql).bind(&binds)?.all().await?.results()
-    }
-
-    pub async fn recent_briefs(
-        &self,
-        project: &str,
-        include: bool,
-        limit: usize,
-    ) -> Result<Vec<SessionBrief>> {
-        let comparator = if include { "=" } else { "!=" };
-        let sql = format!(
-            "SELECT id, project, ended_at, summary FROM sessions \
-             WHERE status='ready' AND summary IS NOT NULL AND project {comparator} ?1 \
-             ORDER BY ended_at DESC LIMIT ?2"
-        );
+    pub async fn chunk_seq_texts(&self, session_id: &str) -> Result<Vec<SeqText>> {
         self.db
-            .prepare(&sql)
-            .bind(&[s(project), n(limit as i64)])?
+            .prepare("SELECT seq, text FROM chunks WHERE session_id=?1")
+            .bind(&[s(session_id)])?
             .all()
             .await?
             .results()
@@ -152,37 +118,4 @@ impl Store {
         self.db.batch(statements).await?;
         Ok(())
     }
-
-    pub async fn hydrate_chunks(&self, ids: &[String]) -> Result<Vec<ChunkHydration>> {
-        if ids.is_empty() {
-            return Ok(Vec::new());
-        }
-        let placeholders = placeholders(ids.len());
-        let sql = format!(
-            "SELECT c.id, c.session_id, c.text, s.project, s.ended_at FROM chunks c \
-             JOIN sessions s ON s.id = c.session_id WHERE c.id IN ({placeholders})"
-        );
-        let binds: Vec<JsValue> = ids.iter().map(|id| s(id)).collect();
-        self.db.prepare(&sql).bind(&binds)?.all().await?.results()
-    }
-
-    pub async fn hydrate_summaries(&self, ids: &[String]) -> Result<Vec<SessionBrief>> {
-        if ids.is_empty() {
-            return Ok(Vec::new());
-        }
-        let placeholders = placeholders(ids.len());
-        let sql = format!(
-            "SELECT id, project, ended_at, summary FROM sessions \
-             WHERE summary IS NOT NULL AND id IN ({placeholders})"
-        );
-        let binds: Vec<JsValue> = ids.iter().map(|id| s(id)).collect();
-        self.db.prepare(&sql).bind(&binds)?.all().await?.results()
-    }
-}
-
-fn placeholders(count: usize) -> String {
-    (1..=count)
-        .map(|i| format!("?{i}"))
-        .collect::<Vec<_>>()
-        .join(", ")
 }

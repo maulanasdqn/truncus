@@ -1,6 +1,7 @@
 mod ai;
 mod auth;
 mod db;
+mod db_read;
 mod handlers;
 mod pipeline;
 mod vectorize;

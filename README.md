@@ -49,7 +49,7 @@ That builds the three binaries from this repo, writes the client config, registe
 
 ## Usage
 
-Sessions are saved and recalled automatically. Manual access:
+Sessions are saved and recalled automatically: a Stop hook live-captures the session as you work (throttled to once per 5 minutes — override with `TRUNCUS_CAPTURE_INTERVAL_SECS`), and SessionEnd always captures the final state. Re-ingesting is cheap: the pipeline only re-embeds chunks whose content changed. Manual access:
 
 ```bash
 truncus search "how did i fix the login bug"
