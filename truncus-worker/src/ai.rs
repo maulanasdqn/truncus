@@ -4,8 +4,9 @@ use worker::{Ai, Env, Result};
 const EMBED_BATCH: usize = 20;
 const SUMMARY_PROMPT: &str = "You distill AI coding session transcripts into dense memory notes. \
 Produce a digest with: what was worked on, key decisions and why, facts and constraints learned, \
-problems solved, final outcomes, and open TODOs. Use terse bullet points, at most 300 words, \
-no preamble and no headings other than the bullets.";
+problems solved, final outcomes, and open TODOs. Write the digest in the dominant language of the \
+transcript — mirror it exactly (English stays English, Bahasa Indonesia stays Bahasa Indonesia). \
+Use terse bullet points, at most 300 words, no preamble and no headings other than the bullets.";
 
 pub struct AiService {
     ai: Ai,
