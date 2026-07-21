@@ -19,6 +19,7 @@ Claude Code ◄─ MCP (stdio) ──────► truncus-mcp  ──► sema
 | `truncus-hook` | Claude Code SessionEnd / SessionStart hook adapter |
 | `truncus-mcp` | stdio MCP server: `memory_search`, `recent_sessions`, `get_session` |
 | `truncus-cli` | `truncus` binary: search, sessions, reprocess, install |
+| `truncus-web` | Browser dashboard (React + TanStack Router + shadcn/ui) for reading memory |
 
 ## Setup
 
@@ -61,9 +62,22 @@ truncus delete <session-id>
 
 Inside Claude Code, ask things like *"what did I work on last week?"* — the `truncus` MCP tools handle recall.
 
+## Dashboard
+
+A browser dashboard for reading your memory lives in [`truncus-web/`](truncus-web) and is deployed at **https://truncus-ui.stynx.app** — overview stats, a searchable session list with per-session detail, and semantic search. Sign in by pasting your `TRUNCUS_API_TOKEN` (kept in the browser's `localStorage`).
+
+```bash
+cd truncus-web
+bun install
+bun run dev           # http://localhost:5180
+bun run deploy        # vite build + wrangler deploy
+```
+
+`vite dev` proxies `/v1/*` to the Worker, so no CORS setup is needed locally.
+
 ## API
 
-All endpoints require `Authorization: Bearer $TRUNCUS_API_TOKEN`.
+All endpoints require `Authorization: Bearer $TRUNCUS_API_TOKEN`. Responses carry permissive CORS headers (and answer `OPTIONS` preflight) so the browser dashboard can call the API cross-origin.
 
 | Endpoint | Purpose |
 |---|---|
