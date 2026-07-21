@@ -1,13 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useEffect, useState } from "react"
 import type { FC, ReactElement } from "react"
 import { match } from "ts-pattern"
 import { z } from "zod"
 
 import { SkeletonTable } from "#/components/loading-skeletons.tsx"
 import { Card, CardContent } from "#/components/ui/card.tsx"
+import { Pagination } from "#/components/ui/pagination.tsx"
 import { SessionFilters } from "./_components/session-filters.tsx"
 import { SessionTable } from "./_components/session-table.tsx"
 import { useSessions } from "./_hooks/use-sessions.ts"
+
+const PAGE_SIZE = 15
 
 const SessionsPage: FC = (): ReactElement => {
 	const search = Route.useSearch()
@@ -15,6 +19,17 @@ const SessionsPage: FC = (): ReactElement => {
 	const project = search.project ?? "all"
 	const query = search.q ?? ""
 	const { listQuery, projects, filtered } = useSessions({ project, query })
+
+	const [page, setPage] = useState(1)
+	useEffect(() => {
+		setPage(1)
+	}, [project, query])
+	const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+	const currentPage = Math.min(page, pageCount)
+	const pageItems = filtered.slice(
+		(currentPage - 1) * PAGE_SIZE,
+		currentPage * PAGE_SIZE,
+	)
 
 	const setProject = (value: string): void => {
 		void navigate({
@@ -69,9 +84,14 @@ const SessionsPage: FC = (): ReactElement => {
 						/>
 						<Card>
 							<CardContent>
-								<SessionTable sessions={filtered} onOpen={openSession} />
+								<SessionTable sessions={pageItems} onOpen={openSession} />
 							</CardContent>
 						</Card>
+						<Pagination
+							page={currentPage}
+							pageCount={pageCount}
+							onPageChange={setPage}
+						/>
 					</div>
 				))}
 		</section>

@@ -3,6 +3,7 @@ import type { FC, ReactElement } from "react"
 import { toast } from "sonner"
 import { match, P } from "ts-pattern"
 
+import { Markdown } from "#/components/markdown.tsx"
 import { StatusBadge } from "#/components/status-badge.tsx"
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card.tsx"
 import { formatDateTime, formatDuration } from "#/libs/format/index.ts"
@@ -114,11 +115,7 @@ export const SessionDetail: FC<TProps> = ({
 								No summary available.
 							</p>
 						))
-						.otherwise((summary) => (
-							<p className="text-sm leading-relaxed whitespace-pre-wrap">
-								{summary}
-							</p>
-						))}
+						.otherwise((summary) => <Markdown content={summary} />)}
 				</CardContent>
 			</Card>
 		</div>
