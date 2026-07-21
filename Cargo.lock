@@ -1904,7 +1904,7 @@ dependencies = [
 
 [[package]]
 name = "truncus-cli"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -1916,7 +1916,7 @@ dependencies = [
 
 [[package]]
 name = "truncus-core"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "dirs",
  "reqwest",
@@ -1929,7 +1929,7 @@ dependencies = [
 
 [[package]]
 name = "truncus-hook"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "gethostname",
@@ -1940,7 +1940,7 @@ dependencies = [
 
 [[package]]
 name = "truncus-mcp"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "rmcp",
@@ -1952,7 +1952,7 @@ dependencies = [
 
 [[package]]
 name = "truncus-worker"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "console_error_panic_hook",
  "serde",
