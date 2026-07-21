@@ -72,6 +72,9 @@ fn render(project: &str, bundle: &ContextBundle) -> String {
         ));
     }
     text.push_str(
+        "\n## Grounding — say \"I don't know\" when unsure\nAnswer from this memory, the loaded lessons, the knowledge base (knowledge_search), and the actual code. If none of those support a specific claim — a file, API, name, number, or past decision — say \"I don't know\" or \"I'm not sure\" plainly and stop. A wrong confident answer is worse than admitting uncertainty; never invent specifics to fill a gap, and don't dress up a low-confidence recall as fact.\n",
+    );
+    text.push_str(
         "\nUse the truncus MCP tools (memory_search, recent_sessions, get_session, lessons, knowledge_search) for deeper recall.\n",
     );
     text

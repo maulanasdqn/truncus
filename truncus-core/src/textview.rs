@@ -1,11 +1,30 @@
 use crate::dto::{Lesson, SearchHit, SessionMeta};
 use crate::timefmt::date;
 
+const LOW_CONFIDENCE: f64 = 0.5;
+const UNSURE: &str = "⚠ Low-confidence recall — nothing below is a strong match. Do not present \
+any of it as fact; if you can't ground your answer in a high-confidence hit or the actual code, \
+say you don't know rather than guessing.";
+
+fn top_score(hits: &[SearchHit]) -> f64 {
+    hits.iter().fold(0.0, |max, hit| max.max(hit.score))
+}
+
+fn with_confidence(hits: &[SearchHit], body: String) -> String {
+    if top_score(hits) < LOW_CONFIDENCE {
+        format!("{UNSURE}\n\n{body}")
+    } else {
+        body
+    }
+}
+
 pub fn hits(hits: &[SearchHit]) -> String {
     if hits.is_empty() {
-        return "No matching memories found.".into();
+        return "No matching memories found. Say you don't know rather than inventing an answer."
+            .into();
     }
-    hits.iter()
+    let body = hits
+        .iter()
         .map(|hit| {
             format!(
                 "[{:.3}] {} · {} · {} · session {}\n{}",
@@ -18,7 +37,8 @@ pub fn hits(hits: &[SearchHit]) -> String {
             )
         })
         .collect::<Vec<_>>()
-        .join("\n\n")
+        .join("\n\n");
+    with_confidence(hits, body)
 }
 
 pub fn sessions(sessions: &[SessionMeta]) -> String {
@@ -44,9 +64,10 @@ pub fn sessions(sessions: &[SessionMeta]) -> String {
 
 pub fn knowledge(hits: &[SearchHit]) -> String {
     if hits.is_empty() {
-        return "No matching knowledge found.".into();
+        return "No matching knowledge found. Say you don't know rather than guessing.".into();
     }
-    hits.iter()
+    let body = hits
+        .iter()
         .map(|hit| {
             format!(
                 "[{:.3}] {} · {}\n{}",
@@ -54,7 +75,8 @@ pub fn knowledge(hits: &[SearchHit]) -> String {
             )
         })
         .collect::<Vec<_>>()
-        .join("\n\n")
+        .join("\n\n");
+    with_confidence(hits, body)
 }
 
 pub fn lessons(lessons: &[Lesson]) -> String {
