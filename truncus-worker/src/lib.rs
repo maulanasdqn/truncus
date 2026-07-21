@@ -8,7 +8,18 @@ mod pipeline;
 mod reflect;
 mod vectorize;
 
-use worker::{event, Context, Env, Method, Request, Response, Result, Router};
+use worker::{
+    event, Context, Date, Env, Method, Request, Response, Result, Router, ScheduleContext,
+    ScheduledEvent,
+};
+
+#[event(scheduled)]
+async fn scheduled(_event: ScheduledEvent, env: Env, _ctx: ScheduleContext) {
+    if let Ok(database) = env.d1("DB") {
+        let now = Date::now().as_millis() as i64;
+        let _ = db::Store::new(database).decay_lessons(now).await;
+    }
+}
 
 #[event(fetch)]
 async fn fetch(req: Request, env: Env, ctx: Context) -> Result<Response> {

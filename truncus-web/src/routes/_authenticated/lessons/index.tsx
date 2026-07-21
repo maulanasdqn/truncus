@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { SparklesIcon } from "lucide-react"
+import { useEffect, useState } from "react"
 import type { FC, ReactElement } from "react"
 import { match } from "ts-pattern"
 import { z } from "zod"
@@ -7,6 +8,7 @@ import { z } from "zod"
 import { SkeletonLines } from "#/components/loading-skeletons.tsx"
 import { Button } from "#/components/ui/button.tsx"
 import { EmptyState } from "#/components/ui/empty-state.tsx"
+import { Pagination } from "#/components/ui/pagination.tsx"
 import {
 	Select,
 	SelectContent,
@@ -16,6 +18,8 @@ import {
 } from "#/components/ui/select.tsx"
 import { LessonCard } from "./_components/lesson-card.tsx"
 import { useLessons } from "./_hooks/use-lessons.ts"
+
+const PAGE_SIZE = 10
 
 const LessonsPage: FC = (): ReactElement => {
 	const search = Route.useSearch()
@@ -29,6 +33,17 @@ const LessonsPage: FC = (): ReactElement => {
 		reflectMutation,
 		pendingDeleteId,
 	} = useLessons(project)
+
+	const [page, setPage] = useState(1)
+	useEffect(() => {
+		setPage(1)
+	}, [project])
+	const pageCount = Math.max(1, Math.ceil(lessons.length / PAGE_SIZE))
+	const currentPage = Math.min(page, pageCount)
+	const pageItems = lessons.slice(
+		(currentPage - 1) * PAGE_SIZE,
+		currentPage * PAGE_SIZE,
+	)
 
 	const setProject = (value: string): void => {
 		void navigate({
@@ -97,17 +112,24 @@ const LessonsPage: FC = (): ReactElement => {
 							message="Reflect over recent sessions to distill your first lessons — or they'll appear automatically as new sessions are captured."
 						/>
 					) : (
-						<ul className="flex flex-col gap-4">
-							{lessons.map((lesson) => (
-								<li key={lesson.id}>
-									<LessonCard
-										lesson={lesson}
-										isDeleting={pendingDeleteId === lesson.id}
-										onDelete={(id) => deleteMutation.mutate(id)}
-									/>
-								</li>
-							))}
-						</ul>
+						<div className="flex flex-col gap-4">
+							<ul className="flex flex-col gap-4">
+								{pageItems.map((lesson) => (
+									<li key={lesson.id}>
+										<LessonCard
+											lesson={lesson}
+											isDeleting={pendingDeleteId === lesson.id}
+											onDelete={(id) => deleteMutation.mutate(id)}
+										/>
+									</li>
+								))}
+							</ul>
+							<Pagination
+								page={currentPage}
+								pageCount={pageCount}
+								onPageChange={setPage}
+							/>
+						</div>
 					),
 				)}
 		</section>
