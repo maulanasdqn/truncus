@@ -1,7 +1,30 @@
 use serde::{Deserialize, Serialize};
-use worker::{Ai, Env, Result};
+use std::time::Duration;
+use worker::{Ai, Delay, Env, Result};
 
 const EMBED_BATCH: usize = 20;
+const MAX_ATTEMPTS: u32 = 4;
+const BACKOFF_BASE_MS: u64 = 1000;
+const BACKOFF_CAP_MS: u64 = 4000;
+
+fn is_transient(error: &worker::Error) -> bool {
+    let message = error.to_string().to_lowercase();
+    [
+        "3040",
+        "capacity",
+        "temporarily",
+        "429",
+        "too many requests",
+        "overloaded",
+        "timeout",
+        "timed out",
+        "503",
+        "502",
+        "unavailable",
+    ]
+    .iter()
+    .any(|needle| message.contains(needle))
+}
 const SUMMARY_PROMPT: &str = "You distill AI coding session transcripts into dense memory notes. \
 Produce a digest with: what was worked on, key decisions and why, facts and constraints learned, \
 problems solved, final outcomes, and open TODOs. Write the digest in the dominant language of the \
@@ -24,7 +47,7 @@ pub struct AiService {
     summary_model: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct EmbeddingInput<'a> {
     text: &'a [String],
 }
@@ -34,13 +57,13 @@ struct EmbeddingOutput {
     data: Vec<Vec<f32>>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct ChatMessage<'a> {
     role: &'a str,
     content: &'a str,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct ChatInput<'a> {
     messages: Vec<ChatMessage<'a>>,
     max_tokens: u32,
@@ -65,12 +88,32 @@ impl AiService {
         })
     }
 
+    async fn run_retry<I, O>(&self, model: &str, input: I) -> Result<O>
+    where
+        I: Serialize + Clone,
+        O: serde::de::DeserializeOwned,
+    {
+        let mut attempt = 1u32;
+        loop {
+            match self.ai.run(model, input.clone()).await {
+                Ok(output) => return Ok(output),
+                Err(error) => {
+                    if attempt >= MAX_ATTEMPTS || !is_transient(&error) {
+                        return Err(error);
+                    }
+                    let backoff = (BACKOFF_BASE_MS << (attempt - 1)).min(BACKOFF_CAP_MS);
+                    Delay::from(Duration::from_millis(backoff)).await;
+                    attempt += 1;
+                }
+            }
+        }
+    }
+
     pub async fn embed(&self, texts: &[String]) -> Result<Vec<Vec<f32>>> {
         let mut vectors = Vec::with_capacity(texts.len());
         for batch in texts.chunks(EMBED_BATCH) {
             let output: EmbeddingOutput = self
-                .ai
-                .run(&self.embed_model, EmbeddingInput { text: batch })
+                .run_retry(&self.embed_model, EmbeddingInput { text: batch })
                 .await?;
             vectors.extend(output.data);
         }
@@ -98,7 +141,7 @@ impl AiService {
             ],
             max_tokens: 640,
         };
-        let output: ChatOutput = self.ai.run(&self.summary_model, input).await?;
+        let output: ChatOutput = self.run_retry(&self.summary_model, input).await?;
         Ok(output.response.unwrap_or_default().trim().to_string())
     }
 
@@ -117,7 +160,7 @@ impl AiService {
             ],
             max_tokens: 700,
         };
-        let output: ReflectOutput = self.ai.run(&self.summary_model, input).await?;
+        let output: ReflectOutput = self.run_retry(&self.summary_model, input).await?;
         Ok(match output.response {
             Some(serde_json::Value::String(text)) => text,
             Some(other) => other.to_string(),
