@@ -3,8 +3,14 @@ use truncus_core::dto::{IngestRequest, SessionMeta};
 use worker::wasm_bindgen::JsValue;
 use worker::{D1Database, Result};
 
+const STUCK_THRESHOLD_MS: i64 = 10 * 60 * 1000;
+
 pub struct Store {
     pub(crate) db: D1Database,
+}
+
+fn now_ms() -> i64 {
+    worker::Date::now().as_millis() as i64
 }
 
 #[derive(Debug, Deserialize)]
@@ -29,10 +35,10 @@ impl Store {
     pub async fn upsert_pending(&self, req: &IngestRequest) -> Result<()> {
         self.db
             .prepare(
-                "INSERT INTO sessions (id, project, cwd, machine, started_at, ended_at, status) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending') \
+                "INSERT INTO sessions (id, project, cwd, machine, started_at, ended_at, status, updated_at) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7) \
                  ON CONFLICT(id) DO UPDATE SET project=?2, cwd=?3, machine=?4, \
-                 started_at=?5, ended_at=?6, status='pending', error=NULL",
+                 started_at=?5, ended_at=?6, status='pending', error=NULL, updated_at=?7",
             )
             .bind(&[
                 s(&req.session_id),
@@ -41,6 +47,7 @@ impl Store {
                 s(&req.machine),
                 n(req.started_at),
                 n(req.ended_at),
+                n(now_ms()),
             ])?
             .run()
             .await?;
@@ -49,8 +56,27 @@ impl Store {
 
     pub async fn set_status(&self, id: &str, status: &str, error: Option<&str>) -> Result<()> {
         self.db
-            .prepare("UPDATE sessions SET status=?2, error=?3 WHERE id=?1")
-            .bind(&[s(id), s(status), error.map(s).unwrap_or(JsValue::NULL)])?
+            .prepare("UPDATE sessions SET status=?2, error=?3, updated_at=?4 WHERE id=?1")
+            .bind(&[
+                s(id),
+                s(status),
+                error.map(s).unwrap_or(JsValue::NULL),
+                n(now_ms()),
+            ])?
+            .run()
+            .await?;
+        Ok(())
+    }
+
+    pub async fn unstick_sessions(&self) -> Result<()> {
+        let cutoff = now_ms() - STUCK_THRESHOLD_MS;
+        self.db
+            .prepare(
+                "UPDATE sessions SET status='failed', \
+                 error='reset: processing exceeded time budget (likely a Workers AI capacity timeout) — reprocess to retry', \
+                 updated_at=?1 WHERE status='processing' AND updated_at > 0 AND updated_at < ?2",
+            )
+            .bind(&[n(now_ms()), n(cutoff)])?
             .run()
             .await?;
         Ok(())
@@ -59,10 +85,10 @@ impl Store {
     pub async fn set_ready(&self, id: &str, summary: &str, chunk_count: i64) -> Result<()> {
         self.db
             .prepare(
-                "UPDATE sessions SET status='ready', error=NULL, summary=?2, chunk_count=?3 \
-                 WHERE id=?1",
+                "UPDATE sessions SET status='ready', error=NULL, summary=?2, chunk_count=?3, \
+                 updated_at=?4 WHERE id=?1",
             )
-            .bind(&[s(id), s(summary), n(chunk_count)])?
+            .bind(&[s(id), s(summary), n(chunk_count), n(now_ms())])?
             .run()
             .await?;
         Ok(())

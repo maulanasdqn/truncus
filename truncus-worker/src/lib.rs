@@ -16,10 +16,14 @@ use worker::{
 };
 
 #[event(scheduled)]
-async fn scheduled(_event: ScheduledEvent, env: Env, _ctx: ScheduleContext) {
+async fn scheduled(event: ScheduledEvent, env: Env, _ctx: ScheduleContext) {
     if let Ok(database) = env.d1("DB") {
-        let now = Date::now().as_millis() as i64;
-        let _ = db::Store::new(database).decay_lessons(now).await;
+        let store = db::Store::new(database);
+        let _ = store.unstick_sessions().await;
+        if event.cron() == "0 3 * * *" {
+            let now = Date::now().as_millis() as i64;
+            let _ = store.decay_lessons(now).await;
+        }
     }
 }
 
