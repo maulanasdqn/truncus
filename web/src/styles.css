@@ -1,0 +1,29 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./theme.css";
+
+html,
+body,
+#root {
+	min-height: 100%;
+}
+
+body {
+	margin: 0;
+	background-color: var(--background);
+	color: var(--foreground);
+}
+
+@layer base {
+	button:not(:disabled),
+	[role="button"]:not([aria-disabled="true"]),
+	label[for],
+	summary {
+		cursor: pointer;
+	}
+
+	button:disabled,
+	[role="button"][aria-disabled="true"] {
+		cursor: not-allowed;
+	}
+}
