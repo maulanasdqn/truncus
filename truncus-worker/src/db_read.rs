@@ -13,25 +13,50 @@ pub struct ChunkHydration {
     pub ended_at: i64,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct CountRow {
+    pub n: i64,
+}
+
 impl Store {
     pub async fn list_sessions(
         &self,
         project: Option<&str>,
         limit: usize,
+        offset: usize,
     ) -> Result<Vec<SessionMeta>> {
         let (sql, binds) = match project {
             Some(p) => (
                 "SELECT id, project, machine, started_at, ended_at, status, summary, error, \
-                 chunk_count FROM sessions WHERE project=?1 ORDER BY ended_at DESC LIMIT ?2",
-                vec![s(p), n(limit as i64)],
+                 chunk_count FROM sessions WHERE project=?1 ORDER BY ended_at DESC \
+                 LIMIT ?2 OFFSET ?3",
+                vec![s(p), n(limit as i64), n(offset as i64)],
             ),
             None => (
                 "SELECT id, project, machine, started_at, ended_at, status, summary, error, \
-                 chunk_count FROM sessions ORDER BY ended_at DESC LIMIT ?1",
-                vec![n(limit as i64)],
+                 chunk_count FROM sessions ORDER BY ended_at DESC LIMIT ?1 OFFSET ?2",
+                vec![n(limit as i64), n(offset as i64)],
             ),
         };
         self.db.prepare(sql).bind(&binds)?.all().await?.results()
+    }
+
+    pub async fn count_sessions(&self, project: Option<&str>) -> Result<i64> {
+        let (sql, binds) = match project {
+            Some(p) => (
+                "SELECT COUNT(*) AS n FROM sessions WHERE project=?1",
+                vec![s(p)],
+            ),
+            None => ("SELECT COUNT(*) AS n FROM sessions", Vec::new()),
+        };
+        Ok(self
+            .db
+            .prepare(sql)
+            .bind(&binds)?
+            .first::<CountRow>(None)
+            .await?
+            .map(|row| row.n)
+            .unwrap_or(0))
     }
 
     pub async fn recent_briefs(

@@ -39,6 +39,12 @@ pub struct SessionMeta {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionList {
     pub sessions: Vec<SessionMeta>,
+    #[serde(default)]
+    pub total: i64,
+    #[serde(default)]
+    pub limit: i64,
+    #[serde(default)]
+    pub offset: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

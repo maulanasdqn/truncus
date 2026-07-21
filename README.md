@@ -86,7 +86,7 @@ All endpoints require `Authorization: Bearer $TRUNCUS_API_TOKEN`. Responses carr
 | `DELETE /v1/sessions/:id` | remove a session from D1, R2, and Vectorize |
 | `GET /v1/search?q&project&kind&limit` | semantic search over summaries + chunks |
 | `GET /v1/context?project` | recall bundle for session start |
-| `GET /v1/sessions?project&limit` | list sessions |
+| `GET /v1/sessions?project&limit&offset` | list sessions (paginated; returns `total`, `limit`, `offset`) |
 | `GET /v1/sessions/:id` | one session with summary |
 
 ## Notes

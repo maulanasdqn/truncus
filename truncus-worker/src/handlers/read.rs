@@ -58,13 +58,23 @@ pub async fn list_sessions(req: Request, ctx: RouteContext<Context>) -> Result<R
     let params = query_params(&req)?;
     let limit = params
         .get("limit")
-        .and_then(|raw| raw.parse().ok())
+        .and_then(|raw| raw.parse::<usize>().ok())
         .unwrap_or(20)
         .min(100);
-    let sessions = Store::new(ctx.env.d1("DB")?)
-        .list_sessions(params.get("project").map(String::as_str), limit)
-        .await?;
-    Response::from_json(&SessionList { sessions })
+    let offset = params
+        .get("offset")
+        .and_then(|raw| raw.parse::<usize>().ok())
+        .unwrap_or(0);
+    let project = params.get("project").map(String::as_str);
+    let store = Store::new(ctx.env.d1("DB")?);
+    let sessions = store.list_sessions(project, limit, offset).await?;
+    let total = store.count_sessions(project).await?;
+    Response::from_json(&SessionList {
+        sessions,
+        total,
+        limit: limit as i64,
+        offset: offset as i64,
+    })
 }
 
 pub async fn get_session(_req: Request, ctx: RouteContext<Context>) -> Result<Response> {

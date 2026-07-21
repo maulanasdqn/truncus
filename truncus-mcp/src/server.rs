@@ -76,7 +76,7 @@ impl TruncusMcp {
     ) -> Result<CallToolResult, McpError> {
         let response = self
             .client
-            .sessions(params.project.as_deref(), params.limit.unwrap_or(10) as usize)
+            .sessions(params.project.as_deref(), params.limit.unwrap_or(10) as usize, 0)
             .await
             .map_err(internal)?;
         Ok(text(textview::sessions(&response.sessions)))

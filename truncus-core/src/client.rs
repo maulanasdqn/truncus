@@ -69,8 +69,12 @@ impl ApiClient {
         &self,
         project: Option<&str>,
         limit: usize,
+        offset: usize,
     ) -> Result<SessionList, ApiError> {
-        let mut params = vec![("limit", limit.to_string())];
+        let mut params = vec![
+            ("limit", limit.to_string()),
+            ("offset", offset.to_string()),
+        ];
         if let Some(p) = project {
             params.push(("project", p.to_string()));
         }
