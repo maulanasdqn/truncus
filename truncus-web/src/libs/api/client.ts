@@ -3,6 +3,7 @@ import type {
 	TDeleteResponse,
 	TLessonList,
 	TListSessionsParams,
+	TNoteContent,
 	TNoteList,
 	TNoteProjectList,
 	TNotesRemoved,
@@ -80,6 +81,8 @@ export const api = {
 		request<TNoteProjectList>("/v1/notes/projects"),
 	listNotes: (project: string): Promise<TNoteList> =>
 		request<TNoteList>(`/v1/notes${toQuery({ project })}`),
+	noteContent: (project: string, path: string): Promise<TNoteContent> =>
+		request<TNoteContent>(`/v1/notes/content${toQuery({ project, path })}`),
 	clearNotes: (project: string): Promise<TNotesRemoved> =>
 		request<TNotesRemoved>(`/v1/notes${toQuery({ project })}`, {
 			method: "DELETE",

@@ -1,7 +1,7 @@
 use crate::db::{n, s, Store};
 use crate::db_read::{placeholders, CountRow};
 use serde::Deserialize;
-use truncus_core::dto::{NoteMeta, NoteProject};
+use truncus_core::dto::{NoteContent, NoteMeta, NoteProject};
 use worker::wasm_bindgen::JsValue;
 use worker::Result;
 
@@ -39,6 +39,7 @@ impl Store {
             .map(|row| (row.content_hash, row.chunk_count)))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn upsert_note(
         &self,
         id: &str,
@@ -48,12 +49,14 @@ impl Store {
         content_hash: &str,
         chunk_count: i64,
         ts: i64,
+        content: &str,
     ) -> Result<()> {
         self.db
             .prepare(
-                "INSERT INTO notes (id, project, path, title, content_hash, chunk_count, updated_at) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) \
-                 ON CONFLICT(id) DO UPDATE SET title=?4, content_hash=?5, chunk_count=?6, updated_at=?7",
+                "INSERT INTO notes (id, project, path, title, content_hash, chunk_count, updated_at, content) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) \
+                 ON CONFLICT(id) DO UPDATE SET title=?4, content_hash=?5, chunk_count=?6, \
+                 updated_at=?7, content=?8",
             )
             .bind(&[
                 s(id),
@@ -63,10 +66,32 @@ impl Store {
                 s(content_hash),
                 n(chunk_count),
                 n(ts),
+                s(content),
             ])?
             .run()
             .await?;
         Ok(())
+    }
+
+    pub async fn set_note_content(&self, project: &str, path: &str, content: &str) -> Result<()> {
+        self.db
+            .prepare("UPDATE notes SET content=?3 WHERE project=?1 AND path=?2")
+            .bind(&[s(project), s(path), s(content)])?
+            .run()
+            .await?;
+        Ok(())
+    }
+
+    pub async fn get_note_content(
+        &self,
+        project: &str,
+        path: &str,
+    ) -> Result<Option<NoteContent>> {
+        self.db
+            .prepare("SELECT path, title, content FROM notes WHERE project=?1 AND path=?2")
+            .bind(&[s(project), s(path)])?
+            .first::<NoteContent>(None)
+            .await
     }
 
     pub async fn replace_note_chunks(&self, note_id: &str, chunks: &[String]) -> Result<()> {

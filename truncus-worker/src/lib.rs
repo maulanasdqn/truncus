@@ -44,6 +44,7 @@ async fn fetch(req: Request, env: Env, ctx: Context) -> Result<Response> {
         .post_async("/v1/lessons/reflect", handlers::lessons::reflect)
         .delete_async("/v1/lessons/:id", handlers::lessons::remove)
         .get_async("/v1/notes/projects", handlers::notes::projects)
+        .get_async("/v1/notes/content", handlers::notes::content)
         .get_async("/v1/notes", handlers::notes::list)
         .post_async("/v1/notes", handlers::notes::ingest)
         .post_async("/v1/notes/prune", handlers::notes::prune)

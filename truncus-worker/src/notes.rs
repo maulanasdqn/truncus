@@ -48,6 +48,9 @@ pub async fn ingest(
         let hash = content_hash(&note.content);
         let state = store.note_state(&id).await?;
         if state.as_ref().map(|(h, _)| h.as_str()) == Some(hash.as_str()) {
+            store
+                .set_note_content(project, &note.path, &note.content)
+                .await?;
             skipped += 1;
             continue;
         }
@@ -73,7 +76,16 @@ pub async fn ingest(
         delete_stale(&index, &id, previous, chunks.len()).await?;
         store.replace_note_chunks(&id, &chunks).await?;
         store
-            .upsert_note(&id, project, &note.path, &note.title, &hash, chunks.len() as i64, ts)
+            .upsert_note(
+                &id,
+                project,
+                &note.path,
+                &note.title,
+                &hash,
+                chunks.len() as i64,
+                ts,
+                &note.content,
+            )
             .await?;
         ingested += 1;
         chunk_total += chunks.len() as i64;

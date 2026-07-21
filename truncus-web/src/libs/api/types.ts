@@ -63,6 +63,12 @@ export type TNoteList = {
 	notes: TNoteMeta[]
 }
 
+export type TNoteContent = {
+	path: string
+	title: string
+	content: string
+}
+
 export type TNoteProject = {
 	project: string
 	note_count: number

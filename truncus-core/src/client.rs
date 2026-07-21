@@ -1,8 +1,8 @@
 use crate::config::Config;
 use crate::dto::{
-    ContextBundle, IngestRequest, IngestResponse, LessonList, NoteInput, NoteList, NoteProjectList,
-    NotesIngest, NotesIngestResponse, NotesPrune, NotesRemoved, SearchResponse, SessionList,
-    SessionMeta,
+    ContextBundle, IngestRequest, IngestResponse, LessonList, NoteContent, NoteInput, NoteList,
+    NoteProjectList, NotesIngest, NotesIngestResponse, NotesPrune, NotesRemoved, SearchResponse,
+    SessionList, SessionMeta,
 };
 use serde::de::DeserializeOwned;
 
@@ -134,6 +134,19 @@ impl ApiClient {
             self.http
                 .get(self.url("/v1/notes"))
                 .query(&[("project", project)]),
+        )
+        .await
+    }
+
+    pub async fn note_content(
+        &self,
+        project: &str,
+        path: &str,
+    ) -> Result<NoteContent, ApiError> {
+        self.execute(
+            self.http
+                .get(self.url("/v1/notes/content"))
+                .query(&[("project", project), ("path", path)]),
         )
         .await
     }

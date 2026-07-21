@@ -102,6 +102,13 @@ pub struct NoteList {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NoteContent {
+    pub path: String,
+    pub title: String,
+    pub content: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NotesIngest {
     pub project: String,
     pub notes: Vec<NoteInput>,

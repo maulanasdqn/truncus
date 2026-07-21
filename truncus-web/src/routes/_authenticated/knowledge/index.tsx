@@ -10,6 +10,7 @@ import { Button } from "#/components/ui/button.tsx"
 import { Card, CardContent } from "#/components/ui/card.tsx"
 import { EmptyState } from "#/components/ui/empty-state.tsx"
 import { Input } from "#/components/ui/input.tsx"
+import { Pagination } from "#/components/ui/pagination.tsx"
 import {
 	Select,
 	SelectContent,
@@ -20,9 +21,11 @@ import {
 import { ClearKnowledgeDialog } from "./_components/clear-knowledge-dialog.tsx"
 import { KnowledgeResults } from "./_components/knowledge-results.tsx"
 import { NoteList } from "./_components/note-list.tsx"
+import { NoteViewer } from "./_components/note-viewer.tsx"
 import { useKnowledge } from "./_hooks/use-knowledge.ts"
 
 const SYNC_HINT = "truncus vault sync --project <name> <folder>"
+const NOTES_PER_PAGE = 15
 
 const KnowledgePage: FC = (): ReactElement => {
 	const search = Route.useSearch()
@@ -32,6 +35,20 @@ const KnowledgePage: FC = (): ReactElement => {
 	const { projectsQuery, notesQuery, searchQuery, clearMutation } =
 		useKnowledge(project, query)
 	const projects = projectsQuery.data ?? []
+	const notes = notesQuery.data ?? []
+
+	const [openPath, setOpenPath] = useState<string | null>(null)
+	const [page, setPage] = useState(1)
+	useEffect(() => {
+		setPage(1)
+		setOpenPath(null)
+	}, [project])
+	const pageCount = Math.max(1, Math.ceil(notes.length / NOTES_PER_PAGE))
+	const currentPage = Math.min(page, pageCount)
+	const pageNotes = notes.slice(
+		(currentPage - 1) * NOTES_PER_PAGE,
+		currentPage * NOTES_PER_PAGE,
+	)
 
 	useEffect(() => {
 		if (project === "" && projects.length > 0) {
@@ -158,16 +175,28 @@ const KnowledgePage: FC = (): ReactElement => {
 										</p>
 									))
 									.otherwise(() => (
-										<Card>
-											<CardContent>
-												<NoteList notes={notesQuery.data ?? []} />
-											</CardContent>
-										</Card>
+										<div className="flex flex-col gap-4">
+											<Card>
+												<CardContent>
+													<NoteList notes={pageNotes} onOpen={setOpenPath} />
+												</CardContent>
+											</Card>
+											<Pagination
+												page={currentPage}
+												pageCount={pageCount}
+												onPageChange={setPage}
+											/>
+										</div>
 									))}
 							</div>
 						</div>
 					),
 				)}
+			<NoteViewer
+				project={project}
+				path={openPath}
+				onClose={() => setOpenPath(null)}
+			/>
 		</section>
 	)
 }

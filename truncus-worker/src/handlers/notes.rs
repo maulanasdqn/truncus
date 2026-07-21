@@ -6,6 +6,23 @@ use serde_json::{json, Value};
 use truncus_core::dto::{
     NoteList, NoteProjectList, NotesIngest, NotesPrune, NotesRemoved, SearchHit, SearchResponse,
 };
+
+pub async fn content(req: Request, ctx: RouteContext<Context>) -> Result<Response> {
+    let params = query_params(&req)?;
+    let Some(project) = params.get("project").filter(|p| !p.is_empty()) else {
+        return Response::error("project is required", 400);
+    };
+    let Some(path) = params.get("path").filter(|p| !p.is_empty()) else {
+        return Response::error("path is required", 400);
+    };
+    match Store::new(ctx.env.d1("DB")?)
+        .get_note_content(project, path)
+        .await?
+    {
+        Some(note) => Response::from_json(&note),
+        None => Response::error("not found", 404),
+    }
+}
 use worker::{Context, Date, Request, Response, Result, RouteContext};
 
 const KNOWLEDGE_LIMIT: usize = 8;
