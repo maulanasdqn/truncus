@@ -1,4 +1,4 @@
-use crate::dto::{SearchHit, SessionMeta};
+use crate::dto::{Lesson, SearchHit, SessionMeta};
 use crate::timefmt::date;
 
 pub fn hits(hits: &[SearchHit]) -> String {
@@ -36,6 +36,26 @@ pub fn sessions(sessions: &[SessionMeta]) -> String {
                 meta.status,
                 meta.chunk_count,
                 first_line(meta.summary.as_deref().unwrap_or("(no summary yet)"))
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n")
+}
+
+pub fn lessons(lessons: &[Lesson]) -> String {
+    if lessons.is_empty() {
+        return "No lessons learned yet.".into();
+    }
+    lessons
+        .iter()
+        .map(|lesson| {
+            format!(
+                "[{}] {} · seen ×{} · {:.0}% confidence\n{}",
+                lesson.category,
+                lesson.title,
+                lesson.times_seen,
+                lesson.confidence * 100.0,
+                lesson.insight
             )
         })
         .collect::<Vec<_>>()

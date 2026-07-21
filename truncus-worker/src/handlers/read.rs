@@ -11,6 +11,7 @@ const DEFAULT_SEARCH_LIMIT: usize = 8;
 const MAX_SEARCH_LIMIT: usize = 50;
 const CONTEXT_PROJECT_SESSIONS: usize = 3;
 const CONTEXT_OTHER_SESSIONS: usize = 2;
+const CONTEXT_LESSONS: usize = 8;
 
 pub async fn search(req: Request, ctx: RouteContext<Context>) -> Result<Response> {
     let params = query_params(&req)?;
@@ -51,6 +52,7 @@ pub async fn context(req: Request, ctx: RouteContext<Context>) -> Result<Respons
         other_sessions: store
             .recent_briefs(project, false, CONTEXT_OTHER_SESSIONS)
             .await?,
+        lessons: store.list_lessons(Some(project), CONTEXT_LESSONS).await?,
     })
 }
 

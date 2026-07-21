@@ -8,6 +8,16 @@ problems solved, final outcomes, and open TODOs. Write the digest in the dominan
 transcript — mirror it exactly (English stays English, Bahasa Indonesia stays Bahasa Indonesia). \
 Use terse bullet points, at most 300 words, no preamble and no headings other than the bullets.";
 
+const REFLECT_PROMPT: &str = "You extract durable, transferable LESSONS from a summary of an AI \
+coding session so that future sessions perform better. A lesson is a REUSABLE insight — a pitfall \
+to avoid, a fix that worked, a user preference, a project convention, or an effective workflow — \
+not a recap of what happened. Return ONLY a compact JSON array (no prose, no markdown fences) of at \
+most 5 objects, each {\"category\": one of \"pitfall\",\"fix\",\"preference\",\"convention\",\
+\"workflow\",\"insight\"; \"title\": a short imperative under 80 chars; \"insight\": one or two \
+sentences, self-contained and actionable}. Prefer specific, transferable lessons over generic \
+advice. If the session has no durable lesson, return []. Write titles and insights in the digest's \
+dominant language.";
+
 pub struct AiService {
     ai: Ai,
     embed_model: String,
@@ -39,6 +49,11 @@ struct ChatInput<'a> {
 #[derive(Deserialize)]
 struct ChatOutput {
     response: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct ReflectOutput {
+    response: Option<serde_json::Value>,
 }
 
 impl AiService {
@@ -85,5 +100,28 @@ impl AiService {
         };
         let output: ChatOutput = self.ai.run(&self.summary_model, input).await?;
         Ok(output.response.unwrap_or_default().trim().to_string())
+    }
+
+    pub async fn reflect(&self, project: &str, summary: &str) -> Result<String> {
+        let user = format!("Project: {project}\n\nSession digest:\n{summary}");
+        let input = ChatInput {
+            messages: vec![
+                ChatMessage {
+                    role: "system",
+                    content: REFLECT_PROMPT,
+                },
+                ChatMessage {
+                    role: "user",
+                    content: &user,
+                },
+            ],
+            max_tokens: 700,
+        };
+        let output: ReflectOutput = self.ai.run(&self.summary_model, input).await?;
+        Ok(match output.response {
+            Some(serde_json::Value::String(text)) => text,
+            Some(other) => other.to_string(),
+            None => String::new(),
+        })
     }
 }

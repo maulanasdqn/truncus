@@ -1,9 +1,11 @@
 mod ai;
 mod auth;
 mod db;
+mod db_lessons;
 mod db_read;
 mod handlers;
 mod pipeline;
+mod reflect;
 mod vectorize;
 
 use worker::{event, Context, Env, Method, Request, Response, Result, Router};
@@ -25,6 +27,9 @@ async fn fetch(req: Request, env: Env, ctx: Context) -> Result<Response> {
         .get_async("/v1/context", handlers::read::context)
         .get_async("/v1/sessions", handlers::read::list_sessions)
         .get_async("/v1/sessions/:id", handlers::read::get_session)
+        .get_async("/v1/lessons", handlers::lessons::list)
+        .post_async("/v1/lessons/reflect", handlers::lessons::reflect)
+        .delete_async("/v1/lessons/:id", handlers::lessons::remove)
         .run(req, env)
         .await?;
     with_cors(response)

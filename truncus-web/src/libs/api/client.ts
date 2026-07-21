@@ -1,6 +1,7 @@
 import { clearToken, getToken } from "#/libs/auth/token.ts"
 import type {
 	TDeleteResponse,
+	TLessonList,
 	TListSessionsParams,
 	TSearchParams,
 	TSearchResponse,
@@ -61,6 +62,16 @@ export const api = {
 	deleteSession: (id: string): Promise<TDeleteResponse> =>
 		request<TDeleteResponse>(`/v1/sessions/${encodeURIComponent(id)}`, {
 			method: "DELETE",
+		}),
+	listLessons: (params: { project?: string; limit?: number } = {}): Promise<TLessonList> =>
+		request<TLessonList>(`/v1/lessons${toQuery(params)}`),
+	deleteLesson: (id: string): Promise<TDeleteResponse> =>
+		request<TDeleteResponse>(`/v1/lessons/${encodeURIComponent(id)}`, {
+			method: "DELETE",
+		}),
+	reflect: (params: { project?: string; limit?: number } = {}): Promise<TDeleteResponse> =>
+		request<TDeleteResponse>(`/v1/lessons/reflect${toQuery(params)}`, {
+			method: "POST",
 		}),
 	verifyToken: async (token: string): Promise<boolean> => {
 		const response = await fetch(`${API_BASE}/v1/sessions?limit=1`, {

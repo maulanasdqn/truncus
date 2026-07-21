@@ -1,6 +1,6 @@
 # truncus
 
-Unified AI memory cluster on Cloudflare. Every Claude Code session is captured on exit, distilled by Workers AI, embedded into Cloudflare Vectorize, and recalled automatically when the next session starts — plus searchable on demand through MCP tools.
+Unified AI memory cluster on Cloudflare. Every Claude Code session is captured on exit, distilled by Workers AI, embedded into Cloudflare Vectorize, and recalled automatically when the next session starts — plus searchable on demand through MCP tools. It also **learns**: durable lessons are reflected out of each session, reinforced as they recur, and injected into future sessions.
 
 ```
 Claude Code ── SessionEnd hook ──► truncus-hook ──► truncus-worker (Rust → WASM)
@@ -58,6 +58,8 @@ truncus sessions --project truncus
 truncus session <session-id>
 truncus reprocess <session-id>
 truncus delete <session-id>
+truncus lessons --project truncus     # what has been learned, most reinforced first
+truncus reflect --project truncus     # (re)distill lessons from recent sessions
 ```
 
 Inside Claude Code, ask things like *"what did I work on last week?"* — the `truncus` MCP tools handle recall.
@@ -75,6 +77,18 @@ bun run deploy        # vite build + wrangler deploy
 
 `vite dev` proxies `/v1/*` to the Worker, so no CORS setup is needed locally.
 
+## Self-improvement loop
+
+Truncus turns episodic memory into continual learning. After each session is summarized, a Workers-AI **reflection** pass extracts durable *lessons* — pitfalls, fixes, preferences, conventions, effective workflows — as structured records. A lesson that recurs is **reinforced** (its confidence rises, evidence accrues) rather than duplicated. At the next SessionStart the top lessons for the project are **injected** into Claude's context, so past experience shapes future work:
+
+```
+session → reflect (Workers AI) → lessons (D1) → reinforce on repeat
+                                      │
+   SessionStart ◄── inject top lessons ◄──┘
+```
+
+Reflection runs automatically in the ingest pipeline; `truncus reflect` (or `POST /v1/lessons/reflect`) backfills or re-distills on demand. Browse and curate lessons in the dashboard (`/lessons`), the CLI (`truncus lessons`), or the `lessons` MCP tool.
+
 ## API
 
 All endpoints require `Authorization: Bearer $TRUNCUS_API_TOKEN`. Responses carry permissive CORS headers (and answer `OPTIONS` preflight) so the browser dashboard can call the API cross-origin.
@@ -88,6 +102,9 @@ All endpoints require `Authorization: Bearer $TRUNCUS_API_TOKEN`. Responses carr
 | `GET /v1/context?project` | recall bundle for session start |
 | `GET /v1/sessions?project&limit&offset` | list sessions (paginated; returns `total`, `limit`, `offset`) |
 | `GET /v1/sessions/:id` | one session with summary |
+| `GET /v1/lessons?project&limit` | list distilled lessons, most reinforced first |
+| `POST /v1/lessons/reflect?project&session&limit` | reflect over sessions to extract + reinforce lessons |
+| `DELETE /v1/lessons/:id` | remove a lesson |
 
 ## Notes
 

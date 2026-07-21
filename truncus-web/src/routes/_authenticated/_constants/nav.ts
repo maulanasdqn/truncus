@@ -1,4 +1,9 @@
-import { LayoutDashboardIcon, ListIcon, SearchIcon } from "lucide-react"
+import {
+	GraduationCapIcon,
+	LayoutDashboardIcon,
+	ListIcon,
+	SearchIcon,
+} from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
 export type TNavItem = {
@@ -10,5 +15,6 @@ export type TNavItem = {
 export const NAV_ITEMS: readonly TNavItem[] = [
 	{ to: "/overview", label: "Overview", icon: LayoutDashboardIcon },
 	{ to: "/sessions", label: "Sessions", icon: ListIcon },
+	{ to: "/lessons", label: "Lessons", icon: GraduationCapIcon },
 	{ to: "/search", label: "Search", icon: SearchIcon },
 ]

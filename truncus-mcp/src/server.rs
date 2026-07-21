@@ -9,7 +9,8 @@ use truncus_core::textview;
 const INSTRUCTIONS: &str = "truncus is the user's persistent memory of past Claude Code sessions, \
 stored as distilled summaries and conversation chunks on Cloudflare. Use memory_search when the \
 user refers to past work, prior decisions, or asks what they did before; use recent_sessions for \
-a chronological view; use get_session to expand one session.";
+a chronological view; use get_session to expand one session; use lessons to recall durable, \
+reinforced learnings (pitfalls, fixes, preferences, conventions) truncus has distilled for a project.";
 
 #[derive(Clone)]
 pub struct TruncusMcp {
@@ -38,6 +39,14 @@ pub struct RecentParams {
 pub struct GetSessionParams {
     #[schemars(description = "id of the session to fetch")]
     pub session_id: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct LessonsParams {
+    #[schemars(description = "optional project name to scope the lessons")]
+    pub project: Option<String>,
+    #[schemars(description = "max lessons, default 20")]
+    pub limit: Option<u32>,
 }
 
 #[tool_router]
@@ -93,6 +102,21 @@ impl TruncusMcp {
             .await
             .map_err(internal)?;
         Ok(text(textview::session(&meta)))
+    }
+
+    #[tool(
+        description = "List durable lessons truncus has learned from past sessions (pitfalls, fixes, preferences, conventions), most reinforced first"
+    )]
+    async fn lessons(
+        &self,
+        Parameters(params): Parameters<LessonsParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let response = self
+            .client
+            .lessons(params.project.as_deref(), params.limit.unwrap_or(20) as usize)
+            .await
+            .map_err(internal)?;
+        Ok(text(textview::lessons(&response.lessons)))
     }
 }
 

@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::dto::{
-    ContextBundle, IngestRequest, IngestResponse, SearchResponse, SessionList, SessionMeta,
+    ContextBundle, IngestRequest, IngestResponse, LessonList, SearchResponse, SessionList,
+    SessionMeta,
 };
 use serde::de::DeserializeOwned;
 
@@ -84,6 +85,41 @@ impl ApiClient {
 
     pub async fn session(&self, id: &str) -> Result<SessionMeta, ApiError> {
         self.execute(self.http.get(self.url(&format!("/v1/sessions/{id}"))))
+            .await
+    }
+
+    pub async fn lessons(
+        &self,
+        project: Option<&str>,
+        limit: usize,
+    ) -> Result<LessonList, ApiError> {
+        let mut params = vec![("limit", limit.to_string())];
+        if let Some(p) = project {
+            params.push(("project", p.to_string()));
+        }
+        self.execute(self.http.get(self.url("/v1/lessons")).query(&params))
+            .await
+    }
+
+    pub async fn reflect(
+        &self,
+        project: Option<&str>,
+        session: Option<&str>,
+        limit: usize,
+    ) -> Result<IngestResponse, ApiError> {
+        let mut params = vec![("limit", limit.to_string())];
+        if let Some(p) = project {
+            params.push(("project", p.to_string()));
+        }
+        if let Some(sid) = session {
+            params.push(("session", sid.to_string()));
+        }
+        self.execute(self.http.post(self.url("/v1/lessons/reflect")).query(&params))
+            .await
+    }
+
+    pub async fn delete_lesson(&self, id: &str) -> Result<IngestResponse, ApiError> {
+        self.execute(self.http.delete(self.url(&format!("/v1/lessons/{id}"))))
             .await
     }
 

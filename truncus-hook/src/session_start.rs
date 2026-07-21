@@ -10,7 +10,10 @@ pub async fn run(payload: &Value) -> anyhow::Result<()> {
     let project = project_from_cwd(cwd);
     let client = ApiClient::new(&Config::load()?);
     let bundle = client.context(&project).await?;
-    if bundle.project_sessions.is_empty() && bundle.other_sessions.is_empty() {
+    if bundle.project_sessions.is_empty()
+        && bundle.other_sessions.is_empty()
+        && bundle.lessons.is_empty()
+    {
         return Ok(());
     }
     let output = json!({
@@ -50,8 +53,19 @@ fn render(project: &str, bundle: &ContextBundle) -> String {
             ));
         }
     }
+    if !bundle.lessons.is_empty() {
+        text.push_str(&format!(
+            "\n## Lessons learned in {project} — apply these\n"
+        ));
+        for lesson in &bundle.lessons {
+            text.push_str(&format!(
+                "\n- **[{}] {}** — {}\n",
+                lesson.category, lesson.title, lesson.insight
+            ));
+        }
+    }
     text.push_str(
-        "\nUse the truncus MCP tools (memory_search, recent_sessions, get_session) for deeper recall.\n",
+        "\nUse the truncus MCP tools (memory_search, recent_sessions, get_session, lessons) for deeper recall.\n",
     );
     text
 }

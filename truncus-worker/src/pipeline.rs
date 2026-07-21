@@ -60,6 +60,15 @@ async fn process(env: &Env, session_id: &str) -> Result<()> {
     store
         .set_ready(session_id, &summary, chunks.len() as i64)
         .await?;
+    let _ = crate::reflect::reflect_session(
+        &store,
+        &ai,
+        &raw.project,
+        session_id,
+        &summary,
+        raw.ended_at,
+    )
+    .await;
     Ok(())
 }
 

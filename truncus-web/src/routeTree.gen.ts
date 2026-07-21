@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as PublicRouteRouteImport } from './routes/_public/route'
+import { Route as AuthenticatedLessonsIndexRouteImport } from './routes/_authenticated/lessons/index'
 import { Route as AuthenticatedOverviewIndexRouteImport } from './routes/_authenticated/overview/index'
 import { Route as AuthenticatedSearchIndexRouteImport } from './routes/_authenticated/search/index'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
@@ -31,6 +32,12 @@ const PublicRouteRoute = PublicRouteRouteImport.update({
   id: '/_public',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedLessonsIndexRoute =
+  AuthenticatedLessonsIndexRouteImport.update({
+    id: '/lessons/',
+    path: '/lessons/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOverviewIndexRoute =
   AuthenticatedOverviewIndexRouteImport.update({
     id: '/overview/',
@@ -63,6 +70,7 @@ const AuthenticatedSessionsSessionIdIndexRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/lessons/': typeof AuthenticatedLessonsIndexRoute
   '/overview/': typeof AuthenticatedOverviewIndexRoute
   '/search/': typeof AuthenticatedSearchIndexRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
@@ -71,6 +79,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/lessons': typeof AuthenticatedLessonsIndexRoute
   '/overview': typeof AuthenticatedOverviewIndexRoute
   '/search': typeof AuthenticatedSearchIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
@@ -82,6 +91,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_public': typeof PublicRouteRouteWithChildren
+  '/_authenticated/lessons/': typeof AuthenticatedLessonsIndexRoute
   '/_authenticated/overview/': typeof AuthenticatedOverviewIndexRoute
   '/_authenticated/search/': typeof AuthenticatedSearchIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
@@ -92,6 +102,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/lessons/'
     | '/overview/'
     | '/search/'
     | '/sessions/'
@@ -100,6 +111,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/lessons'
     | '/overview'
     | '/search'
     | '/sessions'
@@ -110,6 +122,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/_public'
+    | '/_authenticated/lessons/'
     | '/_authenticated/overview/'
     | '/_authenticated/search/'
     | '/_authenticated/sessions/'
@@ -145,6 +158,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof PublicRouteRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/lessons/': {
+      id: '/_authenticated/lessons/'
+      path: '/lessons'
+      fullPath: '/lessons/'
+      preLoaderRoute: typeof AuthenticatedLessonsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/overview/': {
       id: '/_authenticated/overview/'
@@ -185,6 +205,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedLessonsIndexRoute: typeof AuthenticatedLessonsIndexRoute
   AuthenticatedOverviewIndexRoute: typeof AuthenticatedOverviewIndexRoute
   AuthenticatedSearchIndexRoute: typeof AuthenticatedSearchIndexRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
@@ -192,6 +213,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedLessonsIndexRoute: AuthenticatedLessonsIndexRoute,
   AuthenticatedOverviewIndexRoute: AuthenticatedOverviewIndexRoute,
   AuthenticatedSearchIndexRoute: AuthenticatedSearchIndexRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,

@@ -74,4 +74,26 @@ pub struct SessionBrief {
 pub struct ContextBundle {
     pub project_sessions: Vec<SessionBrief>,
     pub other_sessions: Vec<SessionBrief>,
+    #[serde(default)]
+    pub lessons: Vec<Lesson>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Lesson {
+    pub id: String,
+    pub project: String,
+    pub category: String,
+    pub title: String,
+    pub insight: String,
+    #[serde(default)]
+    pub evidence: String,
+    pub confidence: f64,
+    pub times_seen: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LessonList {
+    pub lessons: Vec<Lesson>,
 }

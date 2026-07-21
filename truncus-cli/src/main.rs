@@ -38,6 +38,20 @@ enum Command {
     Delete {
         id: String,
     },
+    Lessons {
+        #[arg(long)]
+        project: Option<String>,
+        #[arg(long, default_value_t = 30)]
+        limit: usize,
+    },
+    Reflect {
+        #[arg(long)]
+        project: Option<String>,
+        #[arg(long)]
+        session: Option<String>,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+    },
     Install {
         #[arg(long)]
         url: Option<String>,
@@ -104,6 +118,22 @@ async fn main() -> anyhow::Result<()> {
         Command::Delete { id } => {
             let response = client()?.delete_session(&id).await?;
             println!("session {} {}", response.id, response.status);
+            Ok(())
+        }
+        Command::Lessons { project, limit } => {
+            let response = client()?.lessons(project.as_deref(), limit).await?;
+            println!("{}", textview::lessons(&response.lessons));
+            Ok(())
+        }
+        Command::Reflect {
+            project,
+            session,
+            limit,
+        } => {
+            let ack = client()?
+                .reflect(project.as_deref(), session.as_deref(), limit)
+                .await?;
+            println!("reflection {} ({})", ack.id, ack.status);
             Ok(())
         }
     }

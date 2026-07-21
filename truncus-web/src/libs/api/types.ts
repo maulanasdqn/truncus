@@ -34,6 +34,23 @@ export type TDeleteResponse = {
 	status: string
 }
 
+export type TLesson = {
+	id: string
+	project: string
+	category: string
+	title: string
+	insight: string
+	evidence: string
+	confidence: number
+	times_seen: number
+	created_at: number
+	updated_at: number
+}
+
+export type TLessonList = {
+	lessons: TLesson[]
+}
+
 export type TListSessionsParams = {
 	project?: string
 	limit?: number
