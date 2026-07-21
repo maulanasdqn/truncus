@@ -60,6 +60,8 @@ truncus reprocess <session-id>
 truncus delete <session-id>
 truncus lessons --project truncus     # what has been learned, most reinforced first
 truncus reflect --project truncus     # (re)distill lessons from recent sessions
+truncus vault sync --project truncus ~/Obsidian/MyVault   # feed knowledge from a vault
+truncus knowledge "how does auth work" --project truncus  # search that knowledge
 ```
 
 Inside Claude Code, ask things like *"what did I work on last week?"* — the `truncus` MCP tools handle recall.
@@ -89,6 +91,16 @@ session → reflect (Workers AI) → lessons (D1) → reinforce on repeat
 
 Reflection runs automatically in the ingest pipeline; `truncus reflect` (or `POST /v1/lessons/reflect`) backfills or re-distills on demand. Browse and curate lessons in the dashboard (`/lessons`), the CLI (`truncus lessons`), or the `lessons` MCP tool.
 
+## Knowledge base (Obsidian vault)
+
+Feed a project reference knowledge from a local Obsidian vault so an agent has it available without pasting notes into context:
+
+```bash
+truncus vault sync --project <name> /path/to/vault
+```
+
+Each markdown note is chunked, embedded, and stored project-scoped (separate from session memory). At SessionStart the agent is told a knowledge base exists and retrieves only the relevant notes on demand via the `knowledge_search` MCP tool — token-efficient, since matching chunks are pulled instead of the whole vault. Re-running `vault sync` is incremental (unchanged notes skipped by content hash, deleted notes pruned). Browse and search it in the dashboard (`/knowledge`).
+
 ## API
 
 All endpoints require `Authorization: Bearer $TRUNCUS_API_TOKEN`. Responses carry permissive CORS headers (and answer `OPTIONS` preflight) so the browser dashboard can call the API cross-origin.
@@ -105,6 +117,9 @@ All endpoints require `Authorization: Bearer $TRUNCUS_API_TOKEN`. Responses carr
 | `GET /v1/lessons?project&limit` | list distilled lessons, most reinforced first |
 | `POST /v1/lessons/reflect?project&session&limit` | reflect over sessions to extract + reinforce lessons |
 | `DELETE /v1/lessons/:id` | remove a lesson |
+| `GET/POST/DELETE /v1/notes?project` | list / sync / clear vault notes for a project |
+| `POST /v1/notes/prune` · `GET /v1/notes/projects` | reconcile removed notes · list projects with a knowledge base |
+| `GET /v1/knowledge?q&project&limit` | semantic search over vault notes |
 
 ## Notes
 
