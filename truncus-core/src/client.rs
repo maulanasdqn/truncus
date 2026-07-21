@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::dto::{
-    ContextBundle, IngestRequest, IngestResponse, LessonList, SearchResponse, SessionList,
+    ContextBundle, IngestRequest, IngestResponse, LessonList, NoteInput, NoteList, NoteProjectList,
+    NotesIngest, NotesIngestResponse, NotesPrune, NotesRemoved, SearchResponse, SessionList,
     SessionMeta,
 };
 use serde::de::DeserializeOwned;
@@ -120,6 +121,69 @@ impl ApiClient {
 
     pub async fn delete_lesson(&self, id: &str) -> Result<IngestResponse, ApiError> {
         self.execute(self.http.delete(self.url(&format!("/v1/lessons/{id}"))))
+            .await
+    }
+
+    pub async fn note_projects(&self) -> Result<NoteProjectList, ApiError> {
+        self.execute(self.http.get(self.url("/v1/notes/projects")))
+            .await
+    }
+
+    pub async fn list_notes(&self, project: &str) -> Result<NoteList, ApiError> {
+        self.execute(
+            self.http
+                .get(self.url("/v1/notes"))
+                .query(&[("project", project)]),
+        )
+        .await
+    }
+
+    pub async fn ingest_notes(
+        &self,
+        project: &str,
+        notes: Vec<NoteInput>,
+    ) -> Result<NotesIngestResponse, ApiError> {
+        let body = NotesIngest {
+            project: project.to_string(),
+            notes,
+        };
+        self.execute(self.http.post(self.url("/v1/notes")).json(&body))
+            .await
+    }
+
+    pub async fn prune_notes(
+        &self,
+        project: &str,
+        paths: Vec<String>,
+    ) -> Result<NotesRemoved, ApiError> {
+        let body = NotesPrune {
+            project: project.to_string(),
+            paths,
+        };
+        self.execute(self.http.post(self.url("/v1/notes/prune")).json(&body))
+            .await
+    }
+
+    pub async fn clear_notes(&self, project: &str) -> Result<NotesRemoved, ApiError> {
+        self.execute(
+            self.http
+                .delete(self.url("/v1/notes"))
+                .query(&[("project", project)]),
+        )
+        .await
+    }
+
+    pub async fn knowledge(
+        &self,
+        query: &str,
+        project: Option<&str>,
+        limit: usize,
+    ) -> Result<SearchResponse, ApiError> {
+        let mut params = vec![("q", query.to_string()), ("limit", limit.to_string())];
+        if let Some(p) = project {
+            params.push(("project", p.to_string()));
+        }
+        self.execute(self.http.get(self.url("/v1/knowledge")).query(&params))
             .await
     }
 

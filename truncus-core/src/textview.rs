@@ -42,6 +42,21 @@ pub fn sessions(sessions: &[SessionMeta]) -> String {
         .join("\n\n")
 }
 
+pub fn knowledge(hits: &[SearchHit]) -> String {
+    if hits.is_empty() {
+        return "No matching knowledge found.".into();
+    }
+    hits.iter()
+        .map(|hit| {
+            format!(
+                "[{:.3}] {} · {}\n{}",
+                hit.score, hit.project, hit.session_id, hit.text
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n")
+}
+
 pub fn lessons(lessons: &[Lesson]) -> String {
     if lessons.is_empty() {
         return "No lessons learned yet.".into();

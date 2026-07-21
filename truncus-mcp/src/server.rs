@@ -10,7 +10,8 @@ const INSTRUCTIONS: &str = "truncus is the user's persistent memory of past Clau
 stored as distilled summaries and conversation chunks on Cloudflare. Use memory_search when the \
 user refers to past work, prior decisions, or asks what they did before; use recent_sessions for \
 a chronological view; use get_session to expand one session; use lessons to recall durable, \
-reinforced learnings (pitfalls, fixes, preferences, conventions) truncus has distilled for a project.";
+reinforced learnings (pitfalls, fixes, preferences, conventions) truncus has distilled for a project; \
+use knowledge_search to look up reference material in the project's knowledge base (notes synced from an Obsidian vault).";
 
 #[derive(Clone)]
 pub struct TruncusMcp {
@@ -46,6 +47,16 @@ pub struct LessonsParams {
     #[schemars(description = "optional project name to scope the lessons")]
     pub project: Option<String>,
     #[schemars(description = "max lessons, default 20")]
+    pub limit: Option<u32>,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct KnowledgeParams {
+    #[schemars(description = "natural-language query over the project's synced knowledge base (Obsidian vault notes)")]
+    pub query: String,
+    #[schemars(description = "optional project name to scope the search")]
+    pub project: Option<String>,
+    #[schemars(description = "max results, default 8")]
     pub limit: Option<u32>,
 }
 
@@ -117,6 +128,21 @@ impl TruncusMcp {
             .await
             .map_err(internal)?;
         Ok(text(textview::lessons(&response.lessons)))
+    }
+
+    #[tool(
+        description = "Search the project's knowledge base (reference notes synced from an Obsidian vault) for relevant material"
+    )]
+    async fn knowledge_search(
+        &self,
+        Parameters(params): Parameters<KnowledgeParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let response = self
+            .client
+            .knowledge(&params.query, params.project.as_deref(), params.limit.unwrap_or(8) as usize)
+            .await
+            .map_err(internal)?;
+        Ok(text(textview::knowledge(&response.hits)))
     }
 }
 

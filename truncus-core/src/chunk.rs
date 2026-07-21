@@ -4,12 +4,27 @@ pub const CHUNK_BYTES: usize = 2000;
 pub const OVERLAP_BYTES: usize = 200;
 
 pub fn chunk_messages(messages: &[Msg]) -> Vec<String> {
-    let mut chunks = Vec::new();
-    let mut current = String::new();
     let pieces = messages
         .iter()
         .map(|m| format!("{}: {}", m.role, m.text))
-        .flat_map(|f| split_oversized(&f));
+        .flat_map(|f| split_oversized(&f))
+        .collect::<Vec<_>>();
+    accumulate(pieces)
+}
+
+pub fn chunk_text(text: &str) -> Vec<String> {
+    let pieces = text
+        .split("\n\n")
+        .map(str::trim)
+        .filter(|piece| !piece.is_empty())
+        .flat_map(split_oversized)
+        .collect::<Vec<_>>();
+    accumulate(pieces)
+}
+
+fn accumulate(pieces: Vec<String>) -> Vec<String> {
+    let mut chunks = Vec::new();
+    let mut current = String::new();
     for piece in pieces {
         if !current.is_empty() && current.len() + piece.len() + 2 > CHUNK_BYTES {
             let seed = byte_tail(&current, OVERLAP_BYTES);

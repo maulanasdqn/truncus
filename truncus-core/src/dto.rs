@@ -76,6 +76,64 @@ pub struct ContextBundle {
     pub other_sessions: Vec<SessionBrief>,
     #[serde(default)]
     pub lessons: Vec<Lesson>,
+    #[serde(default)]
+    pub note_count: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NoteInput {
+    pub path: String,
+    pub title: String,
+    pub content: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NoteMeta {
+    pub path: String,
+    pub title: String,
+    pub content_hash: String,
+    pub chunk_count: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NoteList {
+    pub notes: Vec<NoteMeta>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotesIngest {
+    pub project: String,
+    pub notes: Vec<NoteInput>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotesIngestResponse {
+    pub ingested: i64,
+    pub skipped: i64,
+    pub chunks: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotesPrune {
+    pub project: String,
+    pub paths: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotesRemoved {
+    pub removed: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NoteProject {
+    pub project: String,
+    pub note_count: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NoteProjectList {
+    pub projects: Vec<NoteProject>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

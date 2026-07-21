@@ -2,8 +2,10 @@ mod ai;
 mod auth;
 mod db;
 mod db_lessons;
+mod db_notes;
 mod db_read;
 mod handlers;
+mod notes;
 mod pipeline;
 mod reflect;
 mod vectorize;
@@ -41,6 +43,12 @@ async fn fetch(req: Request, env: Env, ctx: Context) -> Result<Response> {
         .get_async("/v1/lessons", handlers::lessons::list)
         .post_async("/v1/lessons/reflect", handlers::lessons::reflect)
         .delete_async("/v1/lessons/:id", handlers::lessons::remove)
+        .get_async("/v1/notes/projects", handlers::notes::projects)
+        .get_async("/v1/notes", handlers::notes::list)
+        .post_async("/v1/notes", handlers::notes::ingest)
+        .post_async("/v1/notes/prune", handlers::notes::prune)
+        .delete_async("/v1/notes", handlers::notes::clear)
+        .get_async("/v1/knowledge", handlers::notes::search)
         .run(req, env)
         .await?;
     with_cors(response)

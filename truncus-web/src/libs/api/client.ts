@@ -3,6 +3,9 @@ import type {
 	TDeleteResponse,
 	TLessonList,
 	TListSessionsParams,
+	TNoteList,
+	TNoteProjectList,
+	TNotesRemoved,
 	TSearchParams,
 	TSearchResponse,
 	TSessionList,
@@ -73,6 +76,20 @@ export const api = {
 		request<TDeleteResponse>(`/v1/lessons/reflect${toQuery(params)}`, {
 			method: "POST",
 		}),
+	noteProjects: (): Promise<TNoteProjectList> =>
+		request<TNoteProjectList>("/v1/notes/projects"),
+	listNotes: (project: string): Promise<TNoteList> =>
+		request<TNoteList>(`/v1/notes${toQuery({ project })}`),
+	clearNotes: (project: string): Promise<TNotesRemoved> =>
+		request<TNotesRemoved>(`/v1/notes${toQuery({ project })}`, {
+			method: "DELETE",
+		}),
+	knowledgeSearch: (params: {
+		q: string
+		project?: string
+		limit?: number
+	}): Promise<TSearchResponse> =>
+		request<TSearchResponse>(`/v1/knowledge${toQuery(params)}`),
 	verifyToken: async (token: string): Promise<boolean> => {
 		const response = await fetch(`${API_BASE}/v1/sessions?limit=1`, {
 			headers: { authorization: `Bearer ${token}` },

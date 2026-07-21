@@ -51,6 +51,31 @@ export type TLessonList = {
 	lessons: TLesson[]
 }
 
+export type TNoteMeta = {
+	path: string
+	title: string
+	content_hash: string
+	chunk_count: number
+	updated_at: number
+}
+
+export type TNoteList = {
+	notes: TNoteMeta[]
+}
+
+export type TNoteProject = {
+	project: string
+	note_count: number
+}
+
+export type TNoteProjectList = {
+	projects: TNoteProject[]
+}
+
+export type TNotesRemoved = {
+	removed: number
+}
+
 export type TListSessionsParams = {
 	project?: string
 	limit?: number

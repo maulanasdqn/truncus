@@ -106,7 +106,7 @@ impl Store {
     }
 }
 
-fn placeholders(count: usize) -> String {
+pub(crate) fn placeholders(count: usize) -> String {
     (1..=count)
         .map(|i| format!("?{i}"))
         .collect::<Vec<_>>()

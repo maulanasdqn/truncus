@@ -1,5 +1,6 @@
 pub mod ingest;
 pub mod lessons;
+pub mod notes;
 pub mod read;
 
 use std::collections::HashMap;

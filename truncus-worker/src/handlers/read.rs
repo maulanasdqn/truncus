@@ -53,6 +53,7 @@ pub async fn context(req: Request, ctx: RouteContext<Context>) -> Result<Respons
             .recent_briefs(project, false, CONTEXT_OTHER_SESSIONS)
             .await?,
         lessons: store.list_lessons(Some(project), CONTEXT_LESSONS).await?,
+        note_count: store.note_count(project).await?,
     })
 }
 
@@ -94,8 +95,13 @@ fn build_filter(params: &HashMap<String, String>) -> Option<serde_json::Value> {
     if let Some(project) = params.get("project").filter(|p| !p.is_empty()) {
         filter.insert("project".into(), json!({ "$eq": project }));
     }
-    if let Some(kind) = params.get("kind").filter(|k| !k.is_empty()) {
-        filter.insert("kind".into(), json!({ "$eq": kind }));
+    match params.get("kind").filter(|k| !k.is_empty()) {
+        Some(kind) => {
+            filter.insert("kind".into(), json!({ "$eq": kind }));
+        }
+        None => {
+            filter.insert("kind".into(), json!({ "$ne": "note" }));
+        }
     }
     (!filter.is_empty()).then_some(serde_json::Value::Object(filter))
 }

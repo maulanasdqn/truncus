@@ -1,4 +1,5 @@
 import {
+	BookOpenIcon,
 	GraduationCapIcon,
 	LayoutDashboardIcon,
 	ListIcon,
@@ -16,5 +17,6 @@ export const NAV_ITEMS: readonly TNavItem[] = [
 	{ to: "/overview", label: "Overview", icon: LayoutDashboardIcon },
 	{ to: "/sessions", label: "Sessions", icon: ListIcon },
 	{ to: "/lessons", label: "Lessons", icon: GraduationCapIcon },
+	{ to: "/knowledge", label: "Knowledge", icon: BookOpenIcon },
 	{ to: "/search", label: "Search", icon: SearchIcon },
 ]

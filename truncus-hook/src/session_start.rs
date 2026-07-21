@@ -13,6 +13,7 @@ pub async fn run(payload: &Value) -> anyhow::Result<()> {
     if bundle.project_sessions.is_empty()
         && bundle.other_sessions.is_empty()
         && bundle.lessons.is_empty()
+        && bundle.note_count == 0
     {
         return Ok(());
     }
@@ -64,8 +65,14 @@ fn render(project: &str, bundle: &ContextBundle) -> String {
             ));
         }
     }
+    if bundle.note_count > 0 {
+        text.push_str(&format!(
+            "\n## Knowledge base\nThis project has a knowledge base of {} notes synced from your vault. Use the `knowledge_search` MCP tool to pull relevant notes on demand instead of loading everything.\n",
+            bundle.note_count
+        ));
+    }
     text.push_str(
-        "\nUse the truncus MCP tools (memory_search, recent_sessions, get_session, lessons) for deeper recall.\n",
+        "\nUse the truncus MCP tools (memory_search, recent_sessions, get_session, lessons, knowledge_search) for deeper recall.\n",
     );
     text
 }
